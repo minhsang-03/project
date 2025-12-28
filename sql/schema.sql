@@ -16,15 +16,23 @@ CREATE TABLE seasons (
     FOREIGN KEY (league_id) REFERENCES leagues(league_id)
 );
 
--- 3. Teams Table (Updated with Stadium Info)
+-- 3. Teams Table (Updated with location info)
 CREATE TABLE teams (
     team_id INT PRIMARY KEY,
     name VARCHAR(100),
     city VARCHAR(100),
-    stadium_name VARCHAR(100),
-    stadium_capacity INT,
     latitude DECIMAL(10, 8), 
     longitude DECIMAL(11, 8)
+);
+
+-- 3.1 Stadium Table (for capacity analysis)
+CREATE TABLE team_stadium_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT,
+    season_year INT,
+    stadium_name VARCHAR(100),
+    stadium_capacity INT,
+    FOREIGN KEY (team_id) REFERENCES teams(team_id)
 );
 
 -- 4. Matches Table (Updated with Season Foreign Key)
