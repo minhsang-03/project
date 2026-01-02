@@ -5,84 +5,63 @@ import time
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-# Load credentials
 load_dotenv()
 
 def get_db_engine():
-    user = os.getenv("DB_USER")
-    password = os.getenv("DB_PASSWORD")
-    host = os.getenv("DB_HOST")
-    db = os.getenv("DB_NAME")
-    url = f"mysql+pymysql://{user}:{password}@{host}/{db}"
-    return create_engine(url)
+    user, pw, host, db = os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), os.getenv("DB_HOST"), os.getenv("DB_NAME")
+    # Using 'pool_pre_ping' helps manage stale connections
+    return create_engine(f"mysql+pymysql://{user}:{pw}@{host}/{db}", pool_pre_ping=True)
 
-def fetch_and_save_teams_with_history():
+def fetch_and_save_teams_multi_league():
     engine = get_db_engine()
     api_key = os.getenv("FOOTBALL_API_KEY")
     headers = {'x-apisports-key': api_key}
     
-    # Using your 3 confirmed seasons
-    seasons = [2021, 2022, 2023]
-    league_id = 39
+    league_ids = [39, 61, 78, 135, 140]
+    seasons = [2022, 2023, 2024]
 
-    for season in seasons:
-        print(f"--- Processing Season {season} ---")
-        url = f"https://v3.football.api-sports.io/teams?league={league_id}&season={season}"
-        
-        try:
-            response = requests.get(url, headers=headers).json()
+    for league_id in league_ids:
+        for season in seasons:
+            print(f"--- Processing League ID {league_id} | Season {season} ---")
+            url = f"https://v3.football.api-sports.io/teams?league={league_id}&season={season}"
             
-            if not response.get('response'):
-                print(f"⚠️ No data for {season}. Skipping...")
-                continue
+            try:
+                response = requests.get(url, headers=headers).json()
+                if not response.get('response'):
+                    print(f"⚠️ No data found for League {league_id} in {season}.")
+                    continue
 
-            teams_batch = []
-            history_batch = []
+                for item in response['response']:
+                    t = item['team']
+                    v = item['venue']
+                    
+                    # Using a context manager (with engine.begin()) ensures 
+                    # that the transaction is committed automatically 
+                    # and closed even if an error occurs.
+                    with engine.begin() as conn:
+                        # 1. Static team data
+                        conn.execute(text("""
+                            INSERT IGNORE INTO teams (team_id, name, city)
+                            VALUES (:id, :name, :city)
+                        """), {"id": t['id'], "name": t['name'], "city": v['city']})
+                        
+                        # 2. Historical stadium data
+                        conn.execute(text("""
+                            INSERT INTO team_stadium_history (team_id, season_year, stadium_name, stadium_capacity)
+                            VALUES (:tid, :y, :sn, :cap)
+                            ON DUPLICATE KEY UPDATE stadium_capacity = VALUES(stadium_capacity)
+                        """), {
+                            "tid": t['id'], 
+                            "y": season, 
+                            "sn": v['name'], 
+                            "cap": v['capacity'] if v['capacity'] else 0
+                        })
 
-            for item in response['response']:
-                t = item['team']
-                v = item['venue']
+                print(f"✅ Success: Processed teams for League {league_id} in {season}.")
+                time.sleep(2) # Modest sleep to respect API limits
                 
-                # 1. Prepare data for 'teams' table (Static)
-                teams_batch.append({
-                    'team_id': t['id'],
-                    'name': t['name'],
-                    'city': v['city'],
-                    'latitude': None, # To be enriched later
-                    'longitude': None
-                })
-
-                # 2. Prepare data for 'team_stadium_history' (Historical)
-                history_batch.append({
-                    'team_id': t['id'],
-                    'season_year': season,
-                    'stadium_name': v['name'],
-                    'stadium_capacity': v['capacity']
-                })
-
-            # Convert to DataFrames
-            df_teams = pd.DataFrame(teams_batch).drop_duplicates(subset=['team_id'])
-            df_history = pd.DataFrame(history_batch)
-
-            # Insert Teams (Using INSERT IGNORE logic via SQL to avoid duplicates across seasons)
-            with engine.connect() as conn:
-                for _, row in df_teams.iterrows():
-                    conn.execute(text("""
-                        INSERT IGNORE INTO teams (team_id, name, city, latitude, longitude)
-                        VALUES (:id, :name, :city, :lat, :lon)
-                    """), {"id": row['team_id'], "name": row['name'], "city": row['city'], "lat": None, "lon": None})
-                
-                # Insert Stadium History
-                df_history.to_sql('team_stadium_history', con=engine, if_exists='append', index=False, method='multi')
-                conn.commit()
-
-            print(f"✅ Season {season}: Added {len(df_teams)} teams and their stadium info.")
-            
-            # Rate limiting for Free Tier (10 requests per minute)
-            time.sleep(6) 
-            
-        except Exception as e:
-            print(f"❌ Error in {season}: {e}")
+            except Exception as e:
+                print(f"❌ Error encountered for League {league_id}, Season {season}: {e}")
 
 if __name__ == "__main__":
-    fetch_and_save_teams_with_history()
+    fetch_and_save_teams_multi_league()
