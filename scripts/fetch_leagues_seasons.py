@@ -30,8 +30,8 @@ def initialize_static_data():
             )
             
             # 2. Prepare Seasons Data
-            # Note: 2020 represents the 2020/21 season
-            seasons_to_add = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+            # Note: 2020 represents the 2020/21 season; the three seasons are the only available seasons in the API data source.
+            seasons_to_add = [2021, 2022, 2023]
             
             for year in seasons_to_add:
                 # Check if season already exists to avoid duplicates

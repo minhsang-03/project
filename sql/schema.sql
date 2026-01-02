@@ -84,3 +84,11 @@ CREATE TABLE league_season_stats (
     home_win_percentage DECIMAL(5, 2),
     FOREIGN KEY (league_id) REFERENCES leagues(league_id)
 );
+
+-- adjustments:
+-- add transfer income and net transfer spending to enrichment data table:
+USE football_project;
+
+ALTER TABLE team_enrichment_data 
+ADD COLUMN transfer_income_euro DECIMAL(15, 2),
+ADD COLUMN net_transfer_spend_euro DECIMAL(15, 2);
