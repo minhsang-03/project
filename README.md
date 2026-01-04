@@ -1,77 +1,74 @@
-# How to Run the Python Scripts
-A virtual environment is a self-contained directory that contains a specific Python installation and all the additional packages (like pandas or sqlalchemy) required for this project.
+## Football Data Analytics Pipeline
 
-1. Create the Virtual Environment
-Open your terminal (Mac) or Command Prompt/PowerShell (Windows) in the project root folder and run:
-`# General command`
-`python -m venv venv`
-_This creates a folder named venv in your project directory._
+### Executive Summary
+This project builds an end-to-end data pipeline for top European football leagues (2022-2024), combining API-derived match data with web-scraped transfer market spending and geospatial features. The pipeline normalizes raw inputs into a relational schema, enriches them with external CSVs, and produces analysis-ready tables for feature engineering.
 
-2. Activate the Environment
-You must activate the environment every time you open a new terminal window to work on the project.
-    1. macOS / Linux: Bash
-    `source venv/bin/activate`
+Outputs include exploratory notebooks, feature calculations (e.g., home strength, goals conceded per game), and predictive models aimed at ranking performance (e.g., top-five finishes). Everything runs locally with a lightweight Python/SQL stack so you can rebuild, iterate, and extend the dataset as sources evolve.
 
-    2. Windows: PowerShell
-    `.\venv\Scripts\Activate.ps1`
+### Project Description
+The workflow starts by initializing a database schema, then populating leagues, seasons, teams, stadium histories, standings, and detailed match results via API calls. Transfer market spending is scraped with Beautiful Soup to capture income, expenses, and net balances, which are joined back to teams alongside coordinate-based features.
 
-    3. Windows: DOS
-    `.\venv\Scripts\activate`
-_Note: Once activated, you will see (venv) appearing at the start of your terminal prompt._
+Exploratory analysis (EDA) and advanced modeling live in notebooks that sit atop the curated tables. This separation keeps ingestion, enrichment, and modeling decoupled, making it easy to refresh the raw data or adapt the pipeline to additional leagues without disrupting downstream notebooks.
 
-3. Install Required Packages
-With the environment activated, install all necessary libraries listed in the requirements.txt file:
-    `pip install -r requirements.txt`
+## How to Run the Python Scripts
+A virtual environment keeps dependencies (pandas, SQLAlchemy, requests, Beautiful Soup) isolated for this project.
 
-4. Setting up VS Code
-If you are using VS Code, follow these steps to ensure the editor uses the correct environment:
-    1. Open a Python file.
-    2. Click on the Python Version in the bottom right corner (or press Cmd+Shift+P / Ctrl+Shift+P and type "Python: Select Interpreter").
-    3. Select the interpreter that starts with ./venv or ('venv': venv).
+1. Create the virtual environment
+    - macOS/Linux/Windows: run `python -m venv venv` in the project root. This creates a `venv` folder.
 
-## Executing Python in VS Code:
-1. Execution via Terminal
-Once activated, simply use the python command followed by the path to your script. Since the environment is active, this command automatically uses the libraries (like SQLAlchemy or requests) installed inside your venv.
-    `python scripts/fetch_leagues_seasons.py`
+2. Activate the environment (every new terminal)
+    - macOS/Linux: `source venv/bin/activate`
+    - Windows PowerShell: `./venv/Scripts/Activate.ps1`
+    - Windows Command Prompt: `./venv/Scripts/activate`
+    - You should see `(venv)` in the prompt when active.
 
-3. Execution via VS Code (Integrated)
-If you prefer not to type commands, VS Code can handle the venv for you:
-Select Interpreter: Press Cmd+Shift+P (Mac) or Ctrl+Shift+P (Windows) and type "Python: Select Interpreter". Choose the one inside your ./venv folder.
-Run File: Click the Play button in the top right corner of the editor. VS Code will automatically open a terminal, activate the venv, and run the script.
+3. Install required packages
+    - With the env active: `pip install -r requirements.txt`
 
-# Process for getting league data (PL):
+4. Configure VS Code to use the venv
+    - Open a Python file, press Cmd+Shift+P / Ctrl+Shift+P, choose "Python: Select Interpreter", and pick the interpreter inside `./venv`.
 
-1. schema.sql (Initialisierung)
-Zweck: Erstellt die leere Datenbankstruktur (Tabellen, Spalten, Datentypen).
+## Executing Python in VS Code
+1. Terminal-driven execution
+    - Activate the venv, then run scripts directly, e.g. `python scripts/fetch_leagues_seasons.py`.
 
-Wann: Nur ein einziges Mal ganz am Anfang oder wenn du die Struktur (wie für die Transfer-Einnahmen) geändert hast.
+2. VS Code integrated execution
+    - After selecting the interpreter, use the Run button in the editor. VS Code will activate the venv and execute the current file.
 
-2. fetch_leagues_seasons.py (Die Metadaten)
-Zweck: Erstellt die Einträge für die Ligen (ID 39, 78, 140, etc.) und die Jahre (2021-2023).
+## Data Pipeline Steps
+1. **schema.sql (initialization)**
+    - Purpose: Create the empty database structure (tables, columns, data types).
+    - When: Run once at the start or after structural changes.
 
-Wichtig: Das ist der "Anker". Alle anderen Tabellen beziehen sich auf diese IDs.
+2. **fetch_leagues_seasons.py (metadata)**
+    - Purpose: Insert leagues (IDs 39, 78, 140, etc.) and seasons 2022-2024 from the API.
+    - Why: Serves as the anchor; other tables reference these IDs.
 
-3. fetch_teams_stadiums.py (Die Akteure)
-Zweck: Holt alle Teams der entsprechenden Ligen und Saisons und speichert sie in teams sowie die Stadion-Historie in team_stadium_history.
+3. **fetch_teams_stadiums.py (teams)**
+    - Purpose: Fetch teams for each league/season plus stadium history into `teams` and `team_stadium_history`.
+    - Why: Teams must exist before assigning matches or transfer data.
 
-Warum hier: Ein Team muss in der Datenbank existieren, bevor wir ihm Spiele oder Transferdaten zuordnen können.
+4. **fetch_season_performance.py (target variables)**
+    - Purpose: Fetch final tables (standings) and populate `is_top_5`.
+    - Why: Provides ground truth for modeling.
 
-4. fetch_season_performance.py (Die Zielvariablen)
-Zweck: Holt die Abschlusstabellen (Standings). Hier wird das Feld is_top_5 gefüllt.
+5. **fetch_matches.py (match details)**
+    - Purpose: Load individual match results (full-time scores).
+    - Benefit: Enables feature calculations such as home strength and goals conceded per game.
 
-Warum hier: Dies liefert uns die "Ground Truth" (die Wahrheit) für unser späteres Modell.
+6. **scraper_financials_22_24.py (transfer spending)**
+    - Purpose: Scrape transfer spending, income, and net spending from Transfermarkt using Beautiful Soup.
+    - Why: Supplies financial features for enrichment and modeling.
 
-5. fetch_matches.py (Die Details)
-Zweck: Lädt jedes einzelne Spielergebnis (Fulltime Scores).
+7. **enrich_all_leagues.py (enrichment)**
+    - Purpose: Link external CSVs (coordinates and transfer market data) to existing teams.
+    - Note: To expand to additional leagues, extend the CSV inputs; otherwise fields remain NULL for unsupported leagues.
 
-Nutzen: Daraus berechnen wir später Features wie "Heimstärke" oder "Gegentore pro Spiel".
+8. **01_eda.ipynb (exploratory analysis)**
+    - Purpose: Visualize data, compute correlations, and prepare candidate features.
+    - When: Run whenever the database is refreshed.
 
-6. enrichment_pl_geo_spending_21-23.py (Die Veredelung)
-Zweck: Verknüpft deine externen CSV-Daten (Koordinaten & Transfermarkt) mit den bestehenden Teams in der DB.
+9. **02_advanced_analytics_and_predictive_modelling.ipynb (modeling)**
+    - Purpose: Engineer final features, train predictive models (e.g., top-five finishers), and evaluate performance.
+    - When: After EDA selects candidate features and the dataset is fully enriched.
 
-Wichtig: Da du nun auf 5 Ligen ausweiten willst, musst du dieses Skript entweder für die neuen Ligen anpassen (CSVs bereitstellen) oder akzeptieren, dass diese Felder für die Nicht-PL-Ligen erst einmal NULL bleiben.
-
-7. 01_eda_and_features.ipynb (Die Analyse)
-Zweck: Das ist dein Labor. Hier werden die Daten visualisiert, Korrelationen berechnet und die Features für das Modell vorbereitet.
-
-Wann: Immer dann, wenn die Datenbank mit neuen Daten gefüllt wurde.

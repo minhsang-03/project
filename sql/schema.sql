@@ -16,7 +16,7 @@ CREATE TABLE seasons (
     FOREIGN KEY (league_id) REFERENCES leagues(league_id)
 );
 
--- 3. Teams Table (Updated with location info)
+-- 3. Teams Table (Basic information)
 CREATE TABLE teams (
     team_id INT PRIMARY KEY,
     name VARCHAR(100),
@@ -25,7 +25,7 @@ CREATE TABLE teams (
     longitude DECIMAL(11, 8)
 );
 
--- 3.1 Stadium Table (for capacity analysis)
+-- 4. Stadium History Table (Historical capacity data)
 CREATE TABLE team_stadium_history (
     history_id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT,
@@ -35,7 +35,7 @@ CREATE TABLE team_stadium_history (
     FOREIGN KEY (team_id) REFERENCES teams(team_id)
 );
 
--- 4. Matches Table (Updated with Season Foreign Key)
+-- 5. Matches Table
 CREATE TABLE matches (
     match_id INT PRIMARY KEY,
     season_id INT,
@@ -50,7 +50,7 @@ CREATE TABLE matches (
     FOREIGN KEY (away_team_id) REFERENCES teams(team_id)
 );
 
--- 5. Team Season Performance (Target Variable)
+-- 6. Team Season Performance (Target variable labels)
 CREATE TABLE team_season_performance (
     performance_id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT,
@@ -66,16 +66,18 @@ CREATE TABLE team_season_performance (
     FOREIGN KEY (team_id) REFERENCES teams(team_id)
 );
 
--- 6. Team Enrichment Data (Simplified: Removed squad size)
+-- 7. Team Enrichment Data (Financial metrics)
 CREATE TABLE team_enrichment_data (
     enrichment_id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT,
     season_year INT,
     transfer_spend_euro DECIMAL(15, 2),
+    transfer_income_euro DECIMAL(15, 2),
+    net_transfer_spend_euro DECIMAL(15, 2),
     FOREIGN KEY (team_id) REFERENCES teams(team_id)
 );
 
--- 7. League Season Stats
+-- 8. League Season Stats (Aggregated league metrics)
 CREATE TABLE league_season_stats (
     stat_id INT AUTO_INCREMENT PRIMARY KEY,
     league_id INT,
@@ -84,11 +86,3 @@ CREATE TABLE league_season_stats (
     home_win_percentage DECIMAL(5, 2),
     FOREIGN KEY (league_id) REFERENCES leagues(league_id)
 );
-
--- adjustments:
--- add transfer income and net transfer spending to enrichment data table:
-USE football_project;
-
-ALTER TABLE team_enrichment_data 
-ADD COLUMN transfer_income_euro DECIMAL(15, 2),
-ADD COLUMN net_transfer_spend_euro DECIMAL(15, 2);
