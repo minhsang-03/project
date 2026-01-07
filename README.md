@@ -106,7 +106,7 @@ Execute scripts in the following order to build the complete database:
    ```
    Loads individual match results, enabling feature calculations (e.g., home strength, goals conceded per game).
 
-6. **scraper_financials_22_24.py**
+6. **scraper_financials_22_24.py** (optional – data already available in data/)
    ```bash
    python scripts/scraper_financials_22_24.py
    ```
