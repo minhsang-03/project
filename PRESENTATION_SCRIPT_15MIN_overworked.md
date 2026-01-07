@@ -16,7 +16,7 @@
 
 > "Good afternoon, and welcome to our comprehensive data analytics project. My name is [Name], and I'm presenting today together with my colleagues [Name 2] and [Name 3].
 >
-> Our research project investigates a fundamental question in modern football: **Does money buy success?** This question has become increasingly relevant as transfer spending has exploded in recent years, with some clubs spending hundreds of millions of euros each season on new players.
+> Our research project investigates a fundamental question in modern football: **What are the strongest factor for predicting a top five league finish** and with that: **does money buy success?** This question has become increasingly relevant as transfer spending has exploded in recent years, with some clubs spending hundreds of millions of euros each season on new players.
 >
 > We conducted an in-depth analysis of the top five European football leagues: the English Premier League, the German Bundesliga, the Spanish La Liga, the Italian Serie A, and the French Ligue 1. Our study covers three complete seasons from 2022 through 2024, giving us a total of 290 team-season observations.
 >
