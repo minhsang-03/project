@@ -3,3 +3,10 @@ db_config.py
 __pycache__
 venv
 .DS_Store
+archive/
+.idea/
+CLAUDE.md
+PRESENTATION_SCRIPT_15MIN_overworked.md
+PRESENTATION_SCRIPT_15MIN.md
+PRESENTATION_SCRIPT_FINAL.md
+PROJECT_EVALUATION_FINAL.md
